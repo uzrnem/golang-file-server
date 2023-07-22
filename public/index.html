@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Local Drive</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.4/css/bulma.min.css" integrity="sha512-HqxHUkJM0SYcbvxUw5P60SzdOTy/QVwA1JJrvaXJv4q7lmbDZCmZaqz01UPOaQveoxfYRv1tHozWGPMcuTBuvQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="glyphicons.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js" integrity="sha512-uMtXmF28A2Ab/JJO2t/vYhlaa/3ahUOgj1Zf27M5rOo8/+fcTUVH0/E0ll68njmjrLqOBjXM3V9NiPFL5ywWPQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.12/vue.min.js" integrity="sha512-BKbSR+cfyxLdMAsE0naLReFSLg8/pjbgfxHh/k/kUC82Hy7r6HtR5hLhobaln2gcTvzkyyehrdREdjpsQwy2Jw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  </head>
+  <body>
+    <nav class="navbar has-text-success-dark has-background-primary-light">
+      <div class="navbar-brand">
+        <a class="navbar-item">
+          <strong>Local Drive</strong>
+        </a>
+      </div>
+    </nav>
+    <section class="section pt-2" id="vue-app">
+      <div class="container">
+        <div class="columns">
+          <div class="column is-three-quarters">
+            <div class="file has-name is-fullwidth is-warning">
+              <label class="file-label">
+                <input class="file-input" type="file" id="file" ref="file" v-on:change="setupFile()">
+                <span class="file-cta">
+                  <span class="file-icon"><i class="fas fa-upload"></i></span>
+                  <span class="file-label">Choose a file…</span>
+                </span>
+                <span class="file-name">{{file.name}}</span>
+              </label>
+            </div>
+          </div>
+          <div class="column">
+            <button class="button is-primary is-fullwidth"
+                :class="[isUploading == true ? 'is-loading is-static' : '']"
+                v-on:click="submitFile()"
+            >Upload</button>
+          </div>
+        </div>
+        <div class="columns">
+          <progress class="progress" :value="progress" max="100"
+          :class="[isUploading == true ? 'is-info' : 'is-secondary']">Uploading</progress>
+        </div>
+        <div class="columns pt-2">
+            <div class="column">
+                Directory:
+            </div>
+            <div class="column is-three-quarters">
+                <nav class="breadcrumb has-succeeds-separator is-medium" aria-label="breadcrumbs">
+                  <ul>
+                    <li v-if="path.length == 0" class="is-active"><a href="#" aria-current="page">Root</a></li>
+                    <li v-else><a href="#" @click="updatePath('Root')">Root</a></li>
+                    <template v-for="(item, index) in path">
+                      <li class="is-active" v-if="(index + 1) === path.length"><a href="#" aria-current="page">{{item}}</a></li>
+                      <li v-else><a href="#" @click="updatePath(item)">{{item}}</a></li>
+                    </template>
+                  </ul>
+                </nav>
+            </div>
+        </div>
+        <div class="columns pt-2">
+          <table class="table is-striped is-hoverable is-fullwidth">
+            <thead>
+              <tr>
+                <th></th>
+                <th>File</th>
+                <th>Size</th>
+                <th>Modified</th>
+                <th>Delete</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+                <tr v-for="item in list">
+                  <td></td>
+                  <td v-if="item.isDir">
+                    <a class="has-text-success" @click="addPath(item)" >
+                        <span class="glyphicon glyphicon-book" aria-hidden="true"></span>
+                        <b>{{item.name}}</b>
+                    </a>
+                  </td>
+                  <td v-else-if="item.name.endsWith('.mp4') || item.name.endsWith('.mkv') || item.name.endsWith('.webm') || item.name.endsWith('.mpeg') || item.name.endsWith('.wmv') || item.name.endsWith('.mov')">
+                    <a class="has-text-info" @click="openVideo(path.join('}{') + '}{' + item.name)" target="_blank" >
+                        <span class="glyphicon glyphicon-facetime-video" aria-hidden="true"></span>
+                        <i>{{item.name}}</i>
+                    </a>
+                    <!--  || item.name.endsWith('.avi') NOT_SUPPORTED -->
+                  </td>
+                  <td v-else>
+                    <a class="has-text-info" :href="'/file' + '?path=' + path.join('}{') + '}{' + item.name"
+                        target="_blank" >
+                        <span class="glyphicon glyphicon-file" aria-hidden="true"></span>
+                        <i>{{item.name}}</i>
+                    </a>
+                  </td>
+                  <td v-if="item.isDir == false"><span class="pull-right">{{formatBytes(item.size)}}</span></td>
+                  <td v-else><span class="pull-right">{{item.childCount}} {{(item.childCount < 2) ? 'item' : 'items'}}</span></td>
+                  <td><span class="pull-right">{{new Date(item.time).toLocaleString()}}</span></td>
+                  <td>
+                    <a class="button is-danger is-light is-small" @click="deleteItem(item)"
+                      v-if="!item.isDir"><b>Delete</b></a>
+                  </td>
+                  <td></td>
+                </tr>
+                <tr>
+                  <td colspan="6" v-if="list.length == 0" class=" has-text-centered">
+                    <p class="has-text-secondary">No Records Found!</p>
+                  </td>
+                </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div id="modal-bis" class="modal" v-if="video && video.path != null" :class="[video.path != null ? 'is-active' : '']">
+        <div class="modal-background" @click="video.path = null"></div>
+        <div class="modal-content">
+          <p class="is-4by3">
+            <video controls muted autoPlay crossOrigin="anonymous" id="videoPlayer" v-if="video.path != null">
+                <source v-if="video.path != null" :src="'./' + video.path" type="video/mp4">
+                <track label="English" kind="captions" srcLang="en" :src="'./' + video.path" default>
+            </video>
+          </p>
+        </div>
+        <button class="modal-close is-large" aria-label="close" @click="video.path = null"></button>
+      </div>
+    </section>
+  </body>
+  <script>
+    var app = new Vue({
+      el: '#vue-app',
+      data: {
+        model: {},
+        list: [],
+        file: {name: ''},
+        video: {
+          path: null
+        },
+        progress: 0,
+        isUploading: false,
+        path: []
+      },
+      created() {
+          console.log('Component has been created!');
+      },
+      methods: {
+        deleteItem: function(item) {
+          console.debug(item)
+          str = this.path.join([separator = '}{'])
+          if (str != "") {
+            str += "}{"
+          }
+          axios.get('/delete?path=' + str + item.name )
+          .then((response) => {
+            console.debug('deleted: ', item, ', response: ', response)
+            this.clear();
+          });
+        },
+        getList: function() {
+          str = this.path.join([separator = '}{'])
+          axios.get('/list?path=' + str)
+          .then((response) => {
+            this.list = response.data;
+            console.debug(this.list)
+          });
+        },
+        updatePath: function (item) {
+          if (item == 'Root') {
+            this.path = []
+            this.getList()
+            return
+          }
+          var arr = []
+          for (let index = 0; index < this.path.length; index++) {
+            const element = this.path[index];
+            arr.push(element)
+            if (element == item) {
+              this.path = arr
+              this.getList()
+              return
+            }
+          }
+          return
+        },
+        addPath: function (item) {
+          this.path.push(item.name)
+          this.getList()
+        },
+        submitFile: function() {
+          this.isUploading = true
+          let formData = new FormData();
+          formData.append('file', this.file);
+          str = this.path.join([separator = '}{'])
+          if (str != "") {
+            str += "}{"
+          }
+          axios.post( '/upload?path=' + str,
+            formData,
+            {
+              headers: {
+                'Content-Type': 'multipart/form-data'
+              },
+              onUploadProgress: (progressEvent) => {
+                this.progress = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+              }
+            }
+          )
+          .then(() => { 
+            console.debug('passed: ', this.file.name)
+            this.progress = 0
+            this.isUploading = false
+            document.getElementById("file").value = "";
+            this.clear();
+          })
+          .catch(() => {
+            console.debug('failed: ', this.file.name)
+            this.isUploading = false
+            this.clear();
+          });
+        },
+        setupFile: function() {
+          this.file = this.$refs.file.files[0];
+          console.debug(this.file)
+        },
+        openVideo: function(path) {
+          this.video = { path: null };
+          this.$forceUpdate();
+          setTimeout(() => {
+          this.video = { path: "file?path=" + path };
+            this.$forceUpdate();
+          }, 100);
+        },
+        clear: function() {
+          this.file = {
+              name: ""
+          }
+          this.model = {
+          };
+          this.video = {
+            path: null
+          };
+          this.getList();
+        },
+        formatBytes: function(bytes, decimals = 2) {
+          if (bytes === 0) return '0 Bytes';
+
+          const k = 1024;
+          const dm = decimals < 0 ? 0 : decimals;
+          const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+          const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+          return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+      },
+      mounted() {
+        console.log('Component has been Mounted!');
+        this.clear();
+      }
+    });
+  </script>
+</html>

@@ -1,0 +1,14 @@
+version: '3.7'
+
+services:
+  file-server:
+    image: golang:1.21rc2-alpine3.18
+    container_name: file-server
+    working_dir: /app
+    environment:
+      SERVER_PORT: 9060
+    volumes:
+      - $PWD:/app
+    ports:
+      - 9060:9060
+    entrypoint: tail -f /dev/null

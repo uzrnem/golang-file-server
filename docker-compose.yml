@@ -1,0 +1,13 @@
+#docker-compose -f docker-compose.yml up -d
+version: '3.7'
+
+services:
+  file-server:
+    image: uzrnem/file-server:0.1
+    container_name: file_server
+    environment:
+      SERVER_PORT: 9060
+    volumes:
+      - $HOME/uzrnem/golang-file-server/files:/app/files
+    ports:
+      - 9060:9060
