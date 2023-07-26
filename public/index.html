@@ -66,9 +66,9 @@
               <tr>
                 <th></th>
                 <th>File</th>
-                <th>Size</th>
+                <th>Count / Size</th>
                 <th>Modified</th>
-                <th>Delete</th>
+                <th>Actions</th>
                 <th></th>
               </tr>
             </thead>
@@ -99,6 +99,8 @@
                   <td v-else><span class="pull-right">{{item.childCount}} {{(item.childCount < 2) ? 'item' : 'items'}}</span></td>
                   <td><span class="pull-right">{{new Date(item.time).toLocaleString()}}</span></td>
                   <td>
+                    <a class="button is-primary is-light is-small" @click="downloadItem(item)"
+                      v-if="!item.isDir"><b>Download</b></a>
                     <a class="button is-danger is-light is-small" @click="deleteItem(item)"
                       v-if="!item.isDir"><b>Delete</b></a>
                   </td>
@@ -156,6 +158,9 @@
             console.debug('deleted: ', item, ', response: ', response)
             this.clear();
           });
+        },
+        downloadItem: function(item) {
+          window.open("static/" + this.path.join([separator = '/'])+ "/" + item.name, '_blank', 'noreferrer');
         },
         getList: function() {
           str = this.path.join([separator = '}{'])

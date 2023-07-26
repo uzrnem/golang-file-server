@@ -3,7 +3,7 @@ version: '3.7'
 
 services:
   file-server:
-    image: uzrnem/file-server:0.1
+    image: uzrnem/file-server:0.2
     container_name: file_server
     environment:
       SERVER_PORT: 9060

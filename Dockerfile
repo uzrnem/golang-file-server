@@ -1,4 +1,4 @@
-# docker build . -t uzrnem/file-server:0.1 --no-cache
+# docker build . -t uzrnem/file-server:0.2 --no-cache
 FROM golang:1.21rc2-alpine3.18 as dev
 
 LABEL image_name="FileServer"

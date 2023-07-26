@@ -42,6 +42,7 @@ func main() {
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: "method=${method}, uri=${uri}, status=${status}\n",
 	}))
+	e.Static("/static", "files")
 	e.GET("/list", listHandler)
 	e.GET("/delete", deleteHandler)
 	e.POST("/upload", uploadHandler)
